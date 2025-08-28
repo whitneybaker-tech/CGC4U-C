@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Population Definition Dominoes</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 10px; }
+  #domino { border: 2px solid #444; border-radius: 8px; padding: 20px; text-align: center; background: #f0f0f0; }
+  button { margin-top: 20px; padding: 10px 20px; font-size: 1.1em; cursor: pointer; }
+  .word { font-weight: bold; font-size: 1.3em; margin-bottom: 10px; }
+  .definition { font-style: italic; }
+</style>
+</head>
+<body>
+
+<h2>Population Definition Dominoes</h2>
+<div id="domino">
+  <div class="word">START</div>
+  <div class="definition">Click "Next" to begin</div>
+</div>
+<button id="nextBtn">Next</button>
+
+<script>
+  const dominoes = [
+    { word: "POPULATION", definition: "The inhabitants of a particular area, country, or the whole earth." },
+    { word: "BIRTH RATES", definition: "The amount of live births per 1000 people per year." },
+    { word: "DEATH RATES", definition: "The amount of deaths per 1000 people per year." },
+    { word: "SUSTAINABILITY", definition: "Meeting the needs of the current population whilst ensuring that the future generation can meet their own needs." },
+    { word: "CARRYING CAPACITY", definition: "The number of people, other living organisms, or crops that a region can support without environmental degradation." },
+    { word: "INFANT MORTALITY RATE", definition: "The amount of deaths under 1 year old per 1000 live births per year." },
+    { word: "LIFE EXPECTANCY", definition: "The average age in years that a person is expected to live." },
+    { word: "ELDERLY DEPENDANTS", definition: "The people aged 64+ who are dependent upon the working population." },
+    { word: "PRO-NATALIST POLICIES", definition: "Population policies which aim to increase the birth rate. Eg: France." },
+    { word: "CHILD MORTALITY RATE", definition: "The amount of deaths under the age of 5 per 1000 people per year." },
+    { word: "ANTI-NATALIST POLICIES", definition: "Population policies which aim to reduce the birth rate. Eg: China’s One Child Policy." },
+    { word: "ECONOMICALLY ACTIVE", definition: "The age range between 16 – 64 who are otherwise known as the working population." },
+    { word: "YOUNG DEPENDANTS", definition: "The people aged 0 – 16 who are too young to work and depend upon the working population." },
+    { word: "POPULATION PYRAMID", definition: "A graph which shows the age and sex structure of a country." },
+    { word: "DEMOGRAPHIC TRANSITION MODEL", definition: "A model to show how a country progresses through time in terms of its population structure." },
+    { word: "THOMAS MALTHUS", definition: "A pessimistic population theorist who believes that the world will become too populated and everyone will die." },
+    { word: "ESTER BOSERUP", definition: "An optimistic population theorist who believes that man will always be able to find ways to survive on earth even if the population keeps growing." }
+  ];
+
+  let index = -1;
+  const wordDiv = document.querySelector("#domino .word");
+  const defDiv = document.querySelector("#domino .definition");
+  const btn = document.getElementById("nextBtn");
+
+  btn.addEventListener("click", () => {
+    index++;
+    if (index < dominoes.length) {
+      wordDiv.textContent = dominoes[index].word;
+      defDiv.textContent = dominoes[index].definition;
+      if(index === dominoes.length - 1) {
+        btn.textContent = "End";
+      }
+    } else {
+      wordDiv.textContent = "END";
+      defDiv.textContent = "You have completed the domino chain.";
+      btn.disabled = true;
+    }
+  });
+</script>
+
+</body>
+</html>
