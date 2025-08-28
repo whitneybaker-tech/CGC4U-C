@@ -3,23 +3,54 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Population Definition Dominoes</title>
+<title>Population Vocabulary Quiz Game</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 10px; }
-  #domino { border: 2px solid #444; border-radius: 8px; padding: 20px; text-align: center; background: #f0f0f0; }
-  button { margin-top: 20px; padding: 10px 20px; font-size: 1.1em; cursor: pointer; }
-  .word { font-weight: bold; font-size: 1.3em; margin-bottom: 10px; }
-  .definition { font-style: italic; }
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 10px; background: #f9f9f9; }
+  h2 { text-align: center; }
+  #quiz-container { border: 2px solid #444; border-radius: 8px; padding: 20px; background: white; }
+  #word { font-weight: bold; font-size: 1.5em; margin-bottom: 20px; text-align: center; }
+  .choice-btn {
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+    padding: 12px;
+    font-size: 1.1em;
+    border: 2px solid #444;
+    border-radius: 6px;
+    background: #eee;
+    cursor: pointer;
+    text-align: left;
+  }
+  .choice-btn:hover { background: #ddd; }
+  .choice-btn.correct { background: #a0e6a0; border-color: #3a8a3a; }
+  .choice-btn.incorrect { background: #f5a0a0; border-color: #a33a3a; }
+  #feedback { font-style: italic; margin: 15px 0; text-align: center; }
+  #next-btn, #retry-btn {
+    display: block;
+    margin: 20px auto 0;
+    padding: 12px 24px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 6px;
+    background: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #next-btn:disabled, #retry-btn:disabled { background: #999; cursor: default; }
+  #score { font-weight: bold; font-size: 1.2em; text-align: center; margin-top: 20px; }
 </style>
 </head>
 <body>
 
-<h2>Population Definition Dominoes</h2>
-<div id="domino">
-  <div class="word">START</div>
-  <div class="definition">Click "Next" to begin</div>
+<h2>Population Vocabulary Quiz Game</h2>
+<div id="quiz-container">
+  <div id="word">Loading...</div>
+  <div id="choices"></div>
+  <div id="feedback"></div>
+  <button id="next-btn" disabled>Next</button>
+  <button id="retry-btn" style="display:none;">Play Again</button>
+  <div id="score"></div>
 </div>
-<button id="nextBtn">Next</button>
 
 <script>
   const dominoes = [
@@ -42,25 +73,103 @@
     { word: "ESTER BOSERUP", definition: "An optimistic population theorist who believes that man will always be able to find ways to survive on earth even if the population keeps growing." }
   ];
 
-  let index = -1;
-  const wordDiv = document.querySelector("#domino .word");
-  const defDiv = document.querySelector("#domino .definition");
-  const btn = document.getElementById("nextBtn");
+  // Generate multiple choice options: correct definition + 3 random wrong ones
+  function generateChoices(correctIndex) {
+    const correctDef = dominoes[correctIndex].definition;
+    let choices = [correctDef];
+    const indicesUsed = new Set([correctIndex]);
 
-  btn.addEventListener("click", () => {
-    index++;
-    if (index < dominoes.length) {
-      wordDiv.textContent = dominoes[index].word;
-      defDiv.textContent = dominoes[index].definition;
-      if(index === dominoes.length - 1) {
-        btn.textContent = "End";
+    while (choices.length < 4) {
+      const randIndex = Math.floor(Math.random() * dominoes.length);
+      if (!indicesUsed.has(randIndex)) {
+        choices.push(dominoes[randIndex].definition);
+        indicesUsed.add(randIndex);
       }
+    }
+
+    // Shuffle choices
+    for (let i = choices.length -1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [choices[i], choices[j]] = [choices[j], choices[i]];
+    }
+    return choices;
+  }
+
+  let currentIndex = 0;
+  let score = 0;
+  let answered = false;
+
+  const wordDiv = document.getElementById("word");
+  const choicesDiv = document.getElementById("choices");
+  const feedbackDiv = document.getElementById("feedback");
+  const nextBtn = document.getElementById("next-btn");
+  const retryBtn = document.getElementById("retry-btn");
+  const scoreDiv = document.getElementById("score");
+
+  function loadQuestion() {
+    answered = false;
+    feedbackDiv.textContent = "";
+    nextBtn.disabled = true;
+    choicesDiv.innerHTML = "";
+    scoreDiv.textContent = `Score: ${score} / ${dominoes.length}`;
+
+    const word = dominoes[currentIndex].word;
+    wordDiv.textContent = `What is the definition of: "${word}"?`;
+
+    const choices = generateChoices(currentIndex);
+
+    choices.forEach(choice => {
+      const btn = document.createElement("button");
+      btn.textContent = choice;
+      btn.className = "choice-btn";
+      btn.addEventListener("click", () => {
+        if (answered) return;
+        answered = true;
+        if (choice === dominoes[currentIndex].definition) {
+          btn.classList.add("correct");
+          feedbackDiv.textContent = "Correct!";
+          score++;
+        } else {
+          btn.classList.add("incorrect");
+          feedbackDiv.textContent = `Incorrect! The correct definition is: "${dominoes[currentIndex].definition}"`;
+          // Highlight the correct answer button
+          Array.from(choicesDiv.children).forEach(child => {
+            if (child.textContent === dominoes[currentIndex].definition) {
+              child.classList.add("correct");
+            }
+          });
+        }
+        nextBtn.disabled = false;
+      });
+      choicesDiv.appendChild(btn);
+    });
+  }
+
+  nextBtn.addEventListener("click", () => {
+    currentIndex++;
+    if (currentIndex < dominoes.length) {
+      loadQuestion();
     } else {
-      wordDiv.textContent = "END";
-      defDiv.textContent = "You have completed the domino chain.";
-      btn.disabled = true;
+      // Quiz finished
+      wordDiv.textContent = "Quiz Complete!";
+      choicesDiv.innerHTML = "";
+      feedbackDiv.textContent = "";
+      scoreDiv.textContent = `Your final score is: ${score} / ${dominoes.length}`;
+      nextBtn.style.display = "none";
+      retryBtn.style.display = "block";
     }
   });
+
+  retryBtn.addEventListener("click", () => {
+    currentIndex = 0;
+    score = 0;
+    nextBtn.style.display = "block";
+    retryBtn.style.display = "none";
+    loadQuestion();
+  });
+
+  // Initialize quiz
+  loadQuestion();
 </script>
 
 </body>
