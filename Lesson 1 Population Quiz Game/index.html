@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Population Vocabulary Quiz Game</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 10px; background: #f9f9f9; }
+  h2 { text-align: center; }
+  #quiz-container { border: 2px solid #444; border-radius: 8px; padding: 20px; background: white; }
+  #word { font-weight: bold; font-size: 1.5em; margin-bottom: 20px; text-align: center; }
+  .choice-btn {
+    display: block;
+    width: 100%;
+    margin: 8px 0;
+    padding: 12px;
+    font-size: 1.1em;
+    border: 2px solid #444;
+    border-radius: 6px;
+    background: #eee;
+    cursor: pointer;
+    text-align: left;
+  }
+  .choice-btn:hover { background: #ddd; }
+  .choice-btn.correct { background: #a0e6a0; border-color: #3a8a3a; }
+  .choice-btn.incorrect { background: #f5a0a0; border-color: #a33a3a; }
+  #feedback { font-style: italic; margin: 15px 0; text-align: center; }
+  #next-btn, #retry-btn, #start-btn {
+    display: block;
+    margin: 20px auto 0;
+    padding: 12px 24px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 6px;
+    background: #444;
+    color: white;
+    cursor: pointer;
+  }
+  #next-btn:disabled, #retry-btn:disabled, #start-btn:disabled { background: #999; cursor: default; }
+  #score { font-weight: bold; font-size: 1.2em; text-align: center; margin-top: 20px; }
+  #name-input-container {
+    text-align: center;
+    margin-top: 40px;
+  }
+  #student-name {
+    padding: 10px;
+    font-size: 1.1em;
+    width: 60%;
+    max-width: 300px;
+    border: 2px solid #444;
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+
+<h2>Population Vocabulary Quiz Game</h2>
+<div id="quiz-container" style="display:none;">
+  <div id="word">Loading...</div>
+  <div id="choices"></div>
+  <div id="feedback"></div>
+  <button id="next-btn" disabled>Next</button>
+  <button id="retry-btn" style="display:none;">Play Again</button>
+  <div id="score"></div>
+</div>
+
+<div id="name-input-container">
+  <label for="student-name">Please enter your name to start:</label><br />
+  <input type="text" id="student-name" placeholder="Your name here" />
+  <button id="start-btn" disabled>Start Quiz</button>
+</div>
+
+<script>
+  const dominoes = [
+    { word: "POPULATION", definition: "The inhabitants of a particular area, country, or the whole earth." },
+    { word: "BIRTH RATES", definition: "The amount of live births per 1000 people per year." },
+    { word: "DEATH RATES", definition: "The amount of deaths per 1000 people per year." },
+    { word: "SUSTAINABILITY", definition: "Meeting the needs of the current population whilst ensuring that the future generation can meet their own needs." },
+    { word: "CARRYING CAPACITY", definition: "The number of people, other living organisms, or crops that a region can support without environmental degradation." },
+    { word: "INFANT MORTALITY RATE", definition: "The amount of deaths under 1 year old per 1000 live births per year." },
+    { word: "LIFE EXPECTANCY", definition: "The average age in years that a person is expected to live." },
+    { word: "ELDERLY DEPENDANTS", definition: "The people aged 64+ who are dependent upon the working population." },
+    { word: "PRO-NATALIST POLICIES", definition: "Population policies which aim to increase the birth rate. Eg: France." },
+    { word: "CHILD MORTALITY RATE", definition: "The amount of deaths under the age of 5 per 1000 people per year." },
+    { word: "ANTI-NATALIST POLICIES", definition: "Population policies which aim to reduce the birth rate. Eg: China’s One Child Policy." },
+    { word: "ECONOMICALLY ACTIVE", definition: "The age range between 16 – 64 who are otherwise known as the working population." },
+    { word: "YOUNG DEPENDANTS", definition: "The people aged 0 – 16 who are too young to work and depend upon the working population." },
+    { word: "POPULATION PYRAMID", definition: "A graph which shows the age and sex structure of a country." },
+    { word: "DEMOGRAPHIC TRANSITION MODEL", definition: "A model to show how a country progresses through time in terms of its population structure." },
+    { word: "THOMAS MALTHUS", definition: "A pessimistic population theorist who believes that the world will become too populated and everyone will die." },
+    { word: "ESTER BOSERUP", definition: "An optimistic population theorist who believes that man will always be able to find ways to survive on earth even if the population keeps growing." }
+  ];
+
+  function generateChoices(correctIndex) {
+    const correctDef = dominoes[correctIndex].definition;
+    let choices = [correctDef];
+    const indicesUsed = new Set([correctIndex]);
+
+    while (choices.length < 4) {
+      const randIndex = Math.floor(Math.random() * dominoes.length);
+      if (!indicesUsed.has(randIndex)) {
+        choices.push(dominoes[randIndex].definition);
+        indicesUsed.add(randIndex);
+      }
+    }
+
+    for (let i = choices.length -1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [choices[i], choices[j]] = [choices[j], choices[i]];
+    }
+    return choices;
+  }
+
+  let currentIndex = 0;
+  let score = 0;
+  let answered = false;
+  let studentName = "";
+
+  const wordDiv = document.getElementById("word");
+  const choicesDiv = document.getElementById("choices");
+  const feedbackDiv = document.getElementById("feedback");
+  const nextBtn = document.getElementById("next-btn");
+  const retryBtn = document.getElementById("retry-btn");
+  const scoreDiv = document.getElementById("score");
+  const nameInputContainer = document.getElementById("name-input-container");
+  const studentNameInput = document.getElementById("student-name");
+  const startBtn = document.getElementById("start-btn");
+  const quizContainer = document.getElementById("quiz-container");
+
+  studentNameInput.addEventListener("input", () => {
+    startBtn.disabled = studentNameInput.value.trim() === "";
+  });
+
+  startBtn.addEventListener("click", () => {
+    const nameEntered = studentNameInput.value.trim();
+    if (nameEntered === "") {
+      alert("Please enter your name to start the quiz.");
+      startBtn.disabled = true;
+      return;
+    }
+    studentName = nameEntered;
+    nameInputContainer.style.display = "none";
+    quizContainer.style.display = "block";
+    currentIndex = 0;
+    score = 0;
+    loadQuestion();
+  });
+
+  function loadQuestion() {
+    answered = false;
+    feedbackDiv.textContent = "";
+    nextBtn.disabled = true;
+    choicesDiv.innerHTML = "";
+    scoreDiv.textContent = `Score: ${score} / ${dominoes.length}`;
+
+    const word = dominoes[currentIndex].word;
+    wordDiv.textContent = `What is the definition of: "${word}"?`;
+
+    const choices = generateChoices(currentIndex);
+
+    choices.forEach(choice => {
+      const btn = document.createElement("button");
+      btn.textContent = choice;
+      btn.className = "choice-btn";
+      btn.addEventListener("click", () => {
+        if (answered) return;
+        answered = true;
+        if (choice === dominoes[currentIndex].definition) {
+          btn.classList.add("correct");
+          feedbackDiv.textContent = "Correct!";
+          score++;
+        } else {
+          btn.classList.add("incorrect");
+          feedbackDiv.textContent = `Incorrect! The correct definition is: "${dominoes[currentIndex].definition}"`;
+          Array.from(choicesDiv.children).forEach(child => {
+            if (child.textContent === dominoes[currentIndex].definition) {
+              child.classList.add("correct");
+            }
+          });
+        }
+        nextBtn.disabled = false;
+      });
+      choicesDiv.appendChild(btn);
+    });
+  }
+
+  nextBtn.addEventListener("click", () => {
+    currentIndex++;
+    if (currentIndex < dominoes.length) {
+      loadQuestion();
+    } else {
+      wordDiv.textContent = "Quiz Complete!";
+      choicesDiv.innerHTML = "";
+      feedbackDiv.textContent = "";
+      scoreDiv.textContent = `${studentName}, your final score is: ${score} / ${dominoes.length}`;
+      nextBtn.style.display = "none";
+      retryBtn.style.display = "block";
+    }
+  });
+
+  retryBtn.addEventListener("click", () => {
+    studentNameInput.value = "";
+    studentName = "";
+    nameInputContainer.style.display = "block";
+    quizContainer.style.display = "none";
+    nextBtn.style.display = "block";
+    retryBtn.style.display = "none";
+    scoreDiv.textContent = "";
+    feedbackDiv.textContent = "";
+    wordDiv.textContent = "";
+    choicesDiv.innerHTML = "";
+    startBtn.disabled = true;
+  });
+</script>
+
+</body>
+</html>
